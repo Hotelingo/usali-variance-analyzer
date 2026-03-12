@@ -13,7 +13,7 @@ import csv
 import re
 import sqlite3
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 from openpyxl import load_workbook
 
@@ -172,7 +172,7 @@ def init_db(conn: sqlite3.Connection):
     conn.commit()
 
 
-def insert_import(conn: sqlite3.Connection, wb, file_path: Path, upload_month: str | None = None) -> int:
+def insert_import(conn: sqlite3.Connection, wb, file_path: Path, upload_month: Optional[str] = None) -> int:
     start = wb["Start"]
     period = start[5][1].value if start.max_row >= 5 else None
     financial_year_start = start[9][1].value if start.max_row >= 9 else None
@@ -365,7 +365,7 @@ def update_coa_dimensions(conn, import_id: int):
         )
 
 
-def ingest(input_file: Path, db_path: Path, upload_month: str | None = None):
+def ingest(input_file: Path, db_path: Path, upload_month: Optional[str] = None):
     wb = load_workbook(input_file, data_only=True)
     conn = sqlite3.connect(db_path)
     init_db(conn)
@@ -384,7 +384,7 @@ def ingest(input_file: Path, db_path: Path, upload_month: str | None = None):
     return import_id
 
 
-def latest_import_id(conn: sqlite3.Connection) -> int | None:
+def latest_import_id(conn: sqlite3.Connection) -> Optional[int]:
     row = conn.execute("SELECT MAX(id) FROM imports").fetchone()
     return row[0] if row and row[0] is not None else None
 
@@ -400,7 +400,7 @@ def export_query_to_csv(conn: sqlite3.Connection, query: str, params: tuple, out
     return len(rows)
 
 
-def export_verification_data(db_path: Path, output_dir: Path, import_id: int | None):
+def export_verification_data(db_path: Path, output_dir: Path, import_id: Optional[int]):
     conn = sqlite3.connect(db_path)
     use_import_id = import_id if import_id is not None else latest_import_id(conn)
     if use_import_id is None:
@@ -462,7 +462,7 @@ def export_verification_data(db_path: Path, output_dir: Path, import_id: int | N
     conn.close()
 
 
-def verify_import(db_path: Path, import_id: int | None):
+def verify_import(db_path: Path, import_id: Optional[int]):
     conn = sqlite3.connect(db_path)
     use_import_id = import_id if import_id is not None else latest_import_id(conn)
     if use_import_id is None:
